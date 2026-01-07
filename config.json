@@ -1,6 +1,13 @@
 {
     "enabled": true,
+    "random_time_window_minutes": [-10, 20],
     "skip_dates": [],
+    "holidays": [
+        "2026-01-26",
+        "2026-08-15"
+    ],
+    "workdays": [1, 2, 3, 4, 5],
+    "already_clocked_today": false,
     "random_delay_minutes": [-10, 15],
     "corporate_email_contains": "@straive.com"
 }
