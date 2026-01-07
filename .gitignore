@@ -1,5 +1,13 @@
-credentials.json
-token.json
+config.json
 secrets.json
+
+token.json
+credentials.json
+
+run.lock
+
 screenshots/
+debug.txt
+
 __pycache__/
+*.pyc

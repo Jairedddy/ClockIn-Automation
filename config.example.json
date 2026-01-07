@@ -1,0 +1,7 @@
+{
+    "enabled": true,
+    "random_time_window_minutes": [-10, 20],
+    "workdays": [1, 2, 3, 4, 5],
+    "holidays": [],
+    "skip_dates": [],
+}
