@@ -1,12 +1,10 @@
 {
   "enabled": true,
-  "random_time_window_minutes": [
-    -10,
-    20
-  ],
+  "random_time_window_minutes": [-10, 20],
   "skip_dates": [],
   "holidays": [],
   "workdays": [1, 2, 3, 4, 5],
   "already_clocked_today": true,
-  "last_run_date": "2026-01-07"
+  "last_run_date": "2026-01-07",
+  "screenshot_retention_days": 7
 }

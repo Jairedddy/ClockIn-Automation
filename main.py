@@ -3,15 +3,10 @@ import json
 import subprocess
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from gmail_notifier import send_email
-
-
-# ===============================
-# Config helpers
-# ===============================
 
 def load_config():
     with open("config.json", "r") as f:
@@ -49,11 +44,6 @@ def random_delay_seconds(cfg):
     min_m, max_m = cfg["random_time_window_minutes"]
     return random.randint(min_m * 60, max_m * 60)
 
-
-# ===============================
-# System helpers
-# ===============================
-
 def kill_brave():
     subprocess.run(
         ["taskkill", "/F", "/IM", "brave.exe"],
@@ -65,16 +55,42 @@ def kill_brave():
 def timestamp():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def cleanup_old_screenshots(retention_days):
+    screenshots_root = "screenshots"
+    if not os.path.exists(screenshots_root):
+        return
+    
+    cutoff = datetime().now() - timedelta(days=retention_days)
+    
+    for folder in os.listdir(screenshots_root):
+        folder_path = os.path.join(screenshots_root, folder)
+        
+        if not os.path.isdir(folder_path):
+            continue
+        
+        try:
+            folder_date = datetime.strptime(folder, "%Y%m%d")
+        except ValueError:
+            continue
+        
+        if folder_date < cutoff:
+            for file in os.listdir(folder_path):
+                os.remove(os.path.join(folder_path, file))
+            os.rmdir(folder_path)
 
 def screenshot(page, name):
-    path = f"screenshots/{name}_{timestamp()}.png"
-    page.screenshot(path=path)
+    today_folder = datetime.now().strftime("%Y-%m-%d")
+    folder_path = os.path.join("screenshots", today_folder)
+    
+    os.makedirs(folder_path, exist_ok=True)
+    
+    path = os.path.join(
+        folder_path,
+        f"{name}_{timestamp()}.png"
+    )
+    
+    page.screenshot(path)
     return path
-
-
-# ===============================
-# Load secrets
-# ===============================
 
 with open("secrets.json", "r") as f:
     secrets = json.load(f)
@@ -86,11 +102,6 @@ CORP_EMAIL_ID = secrets["corporate_email_identifier"]
 
 os.makedirs("screenshots", exist_ok=True)
 screenshots_taken = []
-
-
-# ===============================
-# Prevent double execution
-# ===============================
 
 LOCK_FILE = "run.lock"
 
@@ -104,19 +115,16 @@ with open(LOCK_FILE, "w") as f:
     f.write(str(os.getpid()))
 
 
-# ===============================
-# Main automation
-# ===============================
-
 try:
     config = load_config()
 
-    # Reset daily flags automatically
     today_str = datetime.now().date().isoformat()
     if config.get("last_run_date") != today_str:
         config["already_clocked_today"] = False
         config["last_run_date"] = today_str
         save_config(config)
+        
+    cleanup_old_screenshots(config.get("screenshot_retention_days", 7))
 
     allowed, reason = should_run_today(config)
 
@@ -147,12 +155,10 @@ try:
 
         page = context.new_page()
 
-        # Open portal
         page.goto(PORTAL_URL, timeout=60000)
         page.wait_for_timeout(5000)
         screenshots_taken.append(screenshot(page, "01_portal_loaded"))
 
-        # Login with Google
         page.wait_for_selector("a[data-type='saml']", timeout=15000)
         page.locator(
             "a[data-type='saml']:has-text('Login with Google')"
@@ -160,14 +166,12 @@ try:
         page.wait_for_timeout(4000)
         screenshots_taken.append(screenshot(page, "02_google_login_clicked"))
 
-        # Select corporate account
         page.locator(f"text={CORP_EMAIL_ID}").first.click(timeout=15000)
         page.wait_for_timeout(6000)
         screenshots_taken.append(
             screenshot(page, "03_corporate_account_selected")
         )
 
-        # Mood popup (optional)
         try:
             page.locator("text=Skip").click(timeout=5000)
             page.wait_for_timeout(3000)
@@ -175,7 +179,6 @@ try:
         except PlaywrightTimeoutError:
             pass
 
-        # Clock In (retry up to 3 times)
         clocked_in = False
 
         for attempt in range(1, 4):
