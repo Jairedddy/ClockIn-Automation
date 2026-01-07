@@ -172,7 +172,7 @@ try:
 except Exception as e:
     send_email(
         subject="Clock In Automation Failed",
-        body = str(e)
+        body = str(e),
         attachments=screenshots_taken
     )
     raise
