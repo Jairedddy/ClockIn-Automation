@@ -61,7 +61,7 @@ def cleanup_old_screenshots(retention_days):
     if not os.path.exists(screenshots_root):
         return
     
-    cutoff = datetime().now() - timedelta(days=retention_days)
+    cutoff = datetime.now() - timedelta(days=retention_days)
     
     for folder in os.listdir(screenshots_root):
         folder_path = os.path.join(screenshots_root, folder)
@@ -90,7 +90,7 @@ def screenshot(page, name):
         f"{name}_{timestamp()}.png"
     )
     
-    page.screenshot(path)
+    page.screenshot(path=path)
     return path
 
 with open("secrets.json", "r") as f:
@@ -110,7 +110,7 @@ LOCK_FILE = "run.lock"
 
 if os.path.exists(LOCK_FILE):
     if time.time() - os.path.getmtime(LOCK_FILE) > 3600:
-        os.remoove(LOCK_FILE)
+        os.remove(LOCK_FILE)
     else:
         exit(0)
 
