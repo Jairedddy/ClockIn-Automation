@@ -75,18 +75,26 @@ try:
             
         except PlaywrightTimeoutError:
             pass
-        
+                
         clocked_in = False
+        
         for attempt in range(1, 3):
             try:
-                page.locator("text=Clock In").click(timeout=5000)
-                page.wait_for_timeout(4000)
+                page.wait_for_selector(
+                    "li.clockinout_btn.prevent-close",
+                    timeout=8000
+                )
+                page.locator(
+                    "li.clockinout_btn.prevent-close"
+                ).click()
+                
+                page.wait_fot_timeout(4000)
                 screenshots_taken.append(screenshot(page, f"05_clockin_attempt_{attempt}"))
                 clocked_in = True
                 break
             except PlaywrightTimeoutError:
                 if attempt == 3:
-                    raise RuntimeError('Clock In Failedafter retries')
+                    raise RuntimeError("Clock In button not clickable after retries")
                 
         context.close()
         
