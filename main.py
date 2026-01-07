@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from gmail_notifier import send_email
+from telegram_bot import send_telegram_message, send_telegram_photo
 
 def load_config():
     with open("config.json", "r") as f:
@@ -99,6 +100,8 @@ BRAVE_PATH = secrets["brave_executable_path"]
 USER_DATA_DIR = secrets["brave_user_data_dir"]
 PORTAL_URL = secrets["portal_url"]
 CORP_EMAIL_ID = secrets["corporate_email_identifier"]
+TELEGRAM_TOKEN = secrets["telegram"]["bot_token"]
+TELEGRAM_USER_ID = secrets["telegram"]["allowed_user_id"]
 
 os.makedirs("screenshots", exist_ok=True)
 screenshots_taken = []
@@ -133,6 +136,13 @@ try:
             subject="⏭️ Clock In Skipped",
             body=f"Clock-in skipped today: {reason}"
         )
+        
+        send_telegram_message(
+            TELEGRAM_TOKEN,
+            TELEGRAM_USER_ID,
+            f" Clock In Skipped: {reason}"
+        )
+        
         exit(0)
 
     delay = 0
@@ -216,6 +226,19 @@ try:
             body="Your clock-in automation ran successfully.",
             attachments=screenshots_taken
         )
+        
+        send_telegram_message(
+            TELEGRAM_TOKEN,
+            TELEGRAM_USER_ID,
+            "Clock In Successful"
+        )
+        
+        for i in range(len(screenshots_taken)):
+            send_telegram_photo(
+                TELEGRAM_TOKEN,
+                TELEGRAM_USER_ID,
+                screenshots_taken[i]
+            )
 
 except Exception as e:
     send_email(
