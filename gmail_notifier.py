@@ -37,7 +37,7 @@ def send_email(subject, body, attachments=None):
     service = get_gmail_service()
     
     message = EmailMessage()
-    message["To"] = "me"
+    message["To"] = "jaishukreddy7@gmail.com"
     message["Subject"] = subject
     message.set_content(body)
     

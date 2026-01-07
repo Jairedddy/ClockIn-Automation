@@ -11,7 +11,7 @@ def kill_brave():
     subprocess.run(
         ["taskkill", "/F", "/IM", "brave.exe"],
         stdout=subprocess.DEVNULL,
-        sterr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL
     )
 
 def timestamp():
@@ -29,7 +29,7 @@ with open("secrets.json", "r") as f:
     BRAVE_PATH = secrets["brave_executable_path"]
     USER_DATA_DIR = secrets["brave_user_data_dir"]
     PORTAL_URL = secrets["portal_url"]
-    CORP_EMAIL_ID = secrets["corporate_email_id"]
+    CORP_EMAIL_ID = secrets["corporate_email_identifier"]
     
     os.makedirs("screenshots", exist_ok=True)
     
@@ -59,7 +59,7 @@ try:
         
         page.wait_for_selector("a[data-type='saml']", timeout=15000)
         page.locator(
-            "a[data-type='saml']:has-text('Login with Google)"
+            "a[data-type='saml']:has-text('Login with Google')"
         ).click()
         page.wait_for_timeout(4000)
         screenshots_taken.append(screenshot(page, "02_google_login_clicked"))
