@@ -88,7 +88,7 @@ try:
                     "li.clockinout_btn.prevent-close"
                 ).click()
                 
-                page.wait_fot_timeout(4000)
+                page.wait_for_timeout(4000)
                 screenshots_taken.append(screenshot(page, f"05_clockin_attempt_{attempt}"))
                 clocked_in = True
                 break
