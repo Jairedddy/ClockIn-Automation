@@ -54,7 +54,10 @@ with sync_playwright() as p:
     
     
     print("Clicking 'Login with Google'...")
-    page.locator("text=Login with Google").click()
+
+    page.wait_for_selector("a[data-type='saml']", timeout=15000)
+    page.locator("a[data-type='saml']:has-text('Login with Google')").click()
+    
     page.wait_for_timeout(4000)
     screenshot(page, "02_google_login_clicked")
     
