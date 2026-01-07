@@ -1,10 +1,11 @@
 import os
 import json
+from re import T
 import subprocess
 import random
 import time
+from datetime import datetime
 
-from datetime import datetime, timedelta
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from gmail_notifier import send_email
 
@@ -21,25 +22,26 @@ def should_run_today(cfg):
     today_str = today.isoformat()
     
     if not cfg["enabled"]:
-        return False, "Automation disabled"
+        return False, "Automation Disabled"
     
     if today.weekday() + 1 not in cfg["workdays"]:
         return False, "Not a workday"
     
     if today_str in cfg["skip_dates"]:
-        return False, "Skipped today"
+        return False, "Skipped Today"
     
     if today_str in cfg["holidays"]:
         return False, "Holiday"
     
     if cfg.get("already_clocked_today"):
-        return False, "Already clocked in"
+        return False, "Already Clocked In"
     
     return True, "Allowed"
 
 def random_delay_seconds(cfg):
-    min_m, max_m = cfg["ranodm_time_window_minutes"]
-    return random.randint(min_m * 60, max_m * 60)
+    min_m, max_m = cfg["random_time_window_minutes"]
+    return random.randint(min_m * 60, max_m* 60)
+
 
 def kill_brave():
     subprocess.run(
@@ -47,9 +49,9 @@ def kill_brave():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
-
+    
 def timestamp():
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
+    return datetime().now().strftime("%Y%m%d_%H%M%S")
 
 def screenshot(page, name):
     path = f"screenshots/{name}_{timestamp()}.png"
@@ -57,33 +59,43 @@ def screenshot(page, name):
     return path
 
 with open("secrets.json", "r") as f:
-    
     secrets = json.load(f)
     
-    BRAVE_PATH = secrets["brave_executable_path"]
-    USER_DATA_DIR = secrets["brave_user_data_dir"]
-    PORTAL_URL = secrets["portal_url"]
-    CORP_EMAIL_ID = secrets["corporate_email_identifier"]
+BRAVE_PATH = secrets["brave_executable_path"]
+USER_DATA_DIR = secrets["brave_user_data_dir"]
+PORTAL_URL = secrets["portal_url"]
+CORP_EMAIL_ID = secrets['corporate_email_identifier']
+
+os.makedirs("screenshots", exist_ok=True)
+screenshots_taken = []
+
+LOCK_FILE = "run.lock"
+
+if os.path.exists(LOCK_FILE):
+    exit(0)
     
-    os.makedirs("screenshots", exist_ok=True)
-    
-    screenshots_taken = []
-    
+with open(LOCK_FILE, "w") as f:
+    f.write(str(os.getpid()))
     
 try:
-    
     config = load_config()
+    
+    today_str = datetime.now().date().isoformat()
+    if config.get("last_run_date") != today_str:
+        config["already_clocked_today"] = False
+        config["last_run_date"] = today_str
+        save_config(config)
+        
     allowed, reason = should_run_today(config)
     
     if not allowed:
         send_email(
             subject="Clock In Skipped",
-            body=f"Clock-in Skipped today: {reason}"
+            body=f"Clock-in skipped today: {reason}"
         )
         exit(0)
         
     delay = random_delay_seconds(config)
-    print(f"Waiting {delay} seconds before clock-in")
     time.sleep(delay)
     
     kill_brave()
@@ -113,7 +125,7 @@ try:
         page.wait_for_timeout(4000)
         screenshots_taken.append(screenshot(page, "02_google_login_clicked"))
         
-        page.locator(f"text={CORP_EMAIL_ID}").first.click(timeout=15000)
+        page.locator(f"text={CORP_EMAIL_ID}", has_text=CORP_EMAIL_ID).first.click(timeout=15000)
         page.wait_for_timeout(6000)
         screenshots_taken.append(screenshot(page, "03_corporate_google_account_selected"))
         
@@ -124,10 +136,10 @@ try:
             
         except PlaywrightTimeoutError:
             pass
-                
+        
         clocked_in = False
         
-        for attempt in range(1, 3):
+        for attempt in range (1, 4):
             try:
                 page.wait_for_selector(
                     "li.clockinout_btn.prevent-close",
@@ -139,6 +151,7 @@ try:
                 
                 page.wait_for_timeout(4000)
                 screenshots_taken.append(screenshot(page, f"05_clockin_attempt_{attempt}"))
+                
                 clocked_in = True
                 break
             except PlaywrightTimeoutError:
@@ -147,19 +160,25 @@ try:
                 
         context.close()
         
-    config["already_clocked_today"] = True
-    save_config(config)
-        
     if clocked_in:
+        config["already_clocked_today"] = True
+        save_config(config)
+        
         send_email(
             subject="Clock In Successful",
-            body="Your Clock-In Automation Ran Successfully",
+            body="Your clokc-in automation ran successfully",
             attachments=screenshots_taken
         )
 except Exception as e:
     send_email(
         subject="Clock In Automation Failed",
-        body = str(e),
+        body = str(e)
         attachments=screenshots_taken
     )
     raise
+
+finally:
+    if os.path.exists(LOCK_FILE):
+        os.remove(LOCK_FILE)
+        
+        
