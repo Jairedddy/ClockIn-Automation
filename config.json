@@ -1,0 +1,6 @@
+{
+    "enabled": true,
+    "skip_dates": [],
+    "random_delay_minutes": [-10, 15],
+    "corporate_email_contains": "@straive.com"
+}
