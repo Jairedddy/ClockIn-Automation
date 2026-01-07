@@ -8,6 +8,5 @@
     ],
     "workdays": [1, 2, 3, 4, 5],
     "already_clocked_today": false,
-    "random_delay_minutes": [-10, 15],
-    "corporate_email_contains": "@straive.com"
+    "random_delay_minutes": [-10, 15]
 }
