@@ -1,11 +1,45 @@
 import os
 import json
 import subprocess
+import random
+import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from gmail_notifier import send_email
 
+def load_config():
+    with open("config.json", "r") as f:
+        return json.load(f)
+    
+def save_config(cfg):
+    with open("config.json", "w") as f:
+        json.dump(cfg, f, indent=2)
+        
+def should_run_today(cfg):
+    today = datetime.now().date()
+    today_str = today.isoformat()
+    
+    if not cfg["enabled"]:
+        return False, "Automation disabled"
+    
+    if today.weekday() + 1 not in cfg["workdays"]:
+        return False, "Not a workday"
+    
+    if today_str in cfg["skip_dates"]:
+        return False, "Skipped today"
+    
+    if today_str in cfg["holidays"]:
+        return False, "Holiday"
+    
+    if cfg.get("already_clocked_today"):
+        return False, "Already clocked in"
+    
+    return True, "Allowed"
+
+def random_delay_seconds(cfg):
+    min_m, max_m = cfg["ranodm_time_window_minutes"]
+    return random.randint(min_m * 60, max_m * 60)
 
 def kill_brave():
     subprocess.run(
@@ -37,6 +71,21 @@ with open("secrets.json", "r") as f:
     
     
 try:
+    
+    config = load_config()
+    allowed, reason = should_run_today(config)
+    
+    if not allowed:
+        send_email(
+            subject="Clock In Skipped",
+            body=f"Clock-in Skipped today: {reason}"
+        )
+        exit(0)
+        
+    delay = random_delay_seconds(config)
+    print(f"Waiting {delay} seconds before clock-in")
+    time.sleep(delay)
+    
     kill_brave()
     
     with sync_playwright() as p:
@@ -97,6 +146,9 @@ try:
                     raise RuntimeError("Clock In button not clickable after retries")
                 
         context.close()
+        
+    config["already_clocked_today"] = True
+    save_config(config)
         
     if clocked_in:
         send_email(
