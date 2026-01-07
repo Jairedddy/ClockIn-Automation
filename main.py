@@ -1,3 +1,5 @@
+from sqlite3.dbapi2 import Timestamp
+from webbrowser import Chrome
 from playwright.sync_api import sync_playwright
 from datetime import datetime
 import os
@@ -21,13 +23,15 @@ with sync_playwright() as p:
     )
     
     page = context.new_page()
-    page.goto("https://www.google.com", timeout=600000)
+    page.goto("https://straive.darwinbox.com/", timeout=600000)
+    
+    page.wait_for_timeout(5000)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    screenshot_path = f"{SCREENSHOT_DIR}/step1_test_{timestamp}.png"
+    screenshot_path = f"{SCREENSHOT_DIR}/step2_portal_{timestamp}.png"
     page.screenshot(path=screenshot_path)
     
-    print("Screenshot saved: ", screenshot_path)
+    print("Portal Screenshot Saved: ", screenshot_path)
     
     input("Press ENTER to close the browser...")
     context.close()
