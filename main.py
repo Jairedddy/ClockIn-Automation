@@ -95,7 +95,10 @@ screenshots_taken = []
 LOCK_FILE = "run.lock"
 
 if os.path.exists(LOCK_FILE):
-    exit(0)
+    if time.time() - os.path.getmtime(LOCK_FILE) > 3600:
+        os.remoove(LOCK_FILE)
+    else:
+        exit(0)
 
 with open(LOCK_FILE, "w") as f:
     f.write(str(os.getpid()))
@@ -124,8 +127,9 @@ try:
         )
         exit(0)
 
-    delay = random_delay_seconds(config)
-    time.sleep(delay)
+    delay = 0
+    #delay = random_delay_seconds(config)
+    #time.sleep(delay)
 
     kill_brave()
 
