@@ -169,24 +169,92 @@ try:
         page.wait_for_timeout(5000)
         screenshots_taken.append(screenshot(page, "01_portal_loaded"))
 
-        page.wait_for_selector("a[data-type='saml']", timeout=15000)
-        page.locator(
-            "a[data-type='saml']:has-text('Login with Google')"
-        ).click()
-        page.wait_for_timeout(4000)
-        screenshots_taken.append(screenshot(page, "02_google_login_clicked"))
-
-        page.locator(f"text={CORP_EMAIL_ID}").first.click(timeout=15000)
-        page.wait_for_timeout(6000)
-        screenshots_taken.append(
-            screenshot(page, "03_corporate_account_selected")
-        )
-
+        # Handle survey modal that may appear before login (e.g., "How are you feeling at work today?")
         try:
-            page.locator("text=Skip").click(timeout=5000)
-            page.wait_for_timeout(3000)
-            screenshots_taken.append(screenshot(page, "04_mood_skipped"))
+            # Try multiple selectors for the skip button (case-insensitive)
+            skip_selectors = [
+                "button:has-text('SKIP')",
+                "button:has-text('Skip')",
+                "button:has-text('skip')",
+                "[role='button']:has-text('SKIP')",
+                "[role='button']:has-text('Skip')",
+            ]
+            
+            modal_dismissed = False
+            for selector in skip_selectors:
+                try:
+                    skip_button = page.locator(selector).first
+                    if skip_button.is_visible(timeout=3000):
+                        skip_button.click()
+                        page.wait_for_timeout(2000)
+                        screenshots_taken.append(screenshot(page, "01a_survey_modal_dismissed"))
+                        modal_dismissed = True
+                        break
+                except PlaywrightTimeoutError:
+                    continue
+            
+            if not modal_dismissed:
+                # Also try to close modal by clicking outside or pressing Escape
+                try:
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(1000)
+                except:
+                    pass
+        except Exception as e:
+            # If modal handling fails, continue anyway
+            pass
+
+        # Attempt SAML login if not already logged in
+        try:
+            page.wait_for_selector("a[data-type='saml']", timeout=5000)
+            page.locator(
+                "a[data-type='saml']:has-text('Login with Google')"
+            ).click()
+            page.wait_for_timeout(4000)
+            screenshots_taken.append(screenshot(page, "02_google_login_clicked"))
+
+            page.locator(f"text={CORP_EMAIL_ID}").first.click(timeout=15000)
+            page.wait_for_timeout(6000)
+            screenshots_taken.append(
+                screenshot(page, "03_corporate_account_selected")
+            )
         except PlaywrightTimeoutError:
+            # Already logged in or SAML button not present - continue
+            screenshots_taken.append(screenshot(page, "02_already_logged_in"))
+            pass
+
+        # Handle survey modal that may appear after login (e.g., "How are you feeling at work today?")
+        try:
+            skip_selectors = [
+                "button:has-text('SKIP')",
+                "button:has-text('Skip')",
+                "button:has-text('skip')",
+                "[role='button']:has-text('SKIP')",
+                "[role='button']:has-text('Skip')",
+            ]
+            
+            modal_dismissed = False
+            for selector in skip_selectors:
+                try:
+                    skip_button = page.locator(selector).first
+                    if skip_button.is_visible(timeout=3000):
+                        skip_button.click()
+                        page.wait_for_timeout(2000)
+                        screenshots_taken.append(screenshot(page, "04_mood_skipped"))
+                        modal_dismissed = True
+                        break
+                except PlaywrightTimeoutError:
+                    continue
+            
+            if not modal_dismissed:
+                # Try pressing Escape to close modal
+                try:
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(1000)
+                except:
+                    pass
+        except Exception:
+            # If modal handling fails, continue anyway
             pass
 
         clocked_in = False
