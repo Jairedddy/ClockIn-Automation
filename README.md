@@ -2,23 +2,23 @@
 
 Automated browser-based solution for clocking in to company attendance portals using Playwright. Features intelligent scheduling, screenshot documentation, and multi-channel notifications.
 
-## ✨ Features
+## Features
 
-- 🤖 **Automated Clock-In**: Browser automation with persistent session management
-- 📅 **Smart Scheduling**: Workday detection, holiday support, and manual skip dates
-- 📸 **Screenshot Documentation**: Automatic capture at each step with retention management
-- 🔔 **Multi-Channel Notifications**: Email (Gmail) and Telegram notifications
-- 🔒 **Duplicate Prevention**: Lock mechanism and daily status tracking
-- ⚙️ **Configurable**: JSON-based configuration for easy customization
+- **Automated Clock-In**: Browser automation with persistent session management
+- **Smart Scheduling**: Workday detection, holiday support, and manual skip dates
+- **Screenshot Documentation**: Automatic capture at each step with retention management
+- **Multi-Channel Notifications**: Email (Gmail) and Telegram notifications
+- **Duplicate Prevention**: Lock mechanism and daily status tracking
+- **Configurable**: JSON-based configuration for easy customization
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Python 3.11+
 - Brave Browser (or Chromium-based browser)
 - Gmail API credentials (`credentials.json`)
 - Telegram Bot Token
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install Dependencies
 
@@ -68,7 +68,7 @@ py -3.11 main.py
 
 Authorize the application in your browser. Token will be saved to `token.json`.
 
-## 📖 Usage
+## Usage
 
 ### Manual Execution
 
@@ -90,7 +90,7 @@ Set up a task scheduler for daily execution:
 0 9 * * 1-5 cd /path/to/ClockIn-Automation && py -3.11 main.py
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ClockIn-Automation/
@@ -107,9 +107,9 @@ ClockIn-Automation/
 └── requirements.txt         # Python dependencies
 ```
 
-## 🔐 Security Notes
+## Security Notes
 
-⚠️ **Never commit** the following files:
+**WARNING: Never commit** the following files:
 - `config.json`
 - `secrets.json`
 - `credentials.json`
@@ -117,17 +117,17 @@ ClockIn-Automation/
 
 These files contain sensitive information and should be kept secure.
 
-## 🛠️ How It Works
+## How It Works
 
 1. **Pre-execution Checks**: Validates lock file, configuration, and run eligibility
 2. **Browser Automation**: Launches Brave with persistent context, navigates to portal
-3. **Authentication**: Clicks Google SAML login, selects corporate account
+3. **Authentication**: Handles survey modals, clicks Google SAML login (if needed), selects corporate account
 4. **Clock-In**: Locates and clicks clock-in button with retry logic (3 attempts)
 5. **Documentation**: Captures screenshots at each critical step
 6. **Notifications**: Sends success/failure notifications via Gmail and Telegram
 7. **Cleanup**: Removes old screenshots and lock files
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
@@ -136,8 +136,9 @@ These files contain sensitive information and should be kept secure.
 | Telegram notifications not working | Verify bot token and user ID in `secrets.json`. |
 | Browser not launching | Check Brave executable path and user data directory in `secrets.json`. |
 | Script runs twice | Lock file mechanism prevents concurrent runs. Check for stale lock files. |
+| Survey modal blocking login | The script automatically handles survey modals. If issues persist, check screenshots for modal appearance. |
 
-## 📝 License
+## License
 
 Personal use only. Not intended for distribution.
 
